@@ -845,7 +845,7 @@ class ConditionalDimension(DerivedDimension):
         except AttributeError:
             factor = dim._factor
         defaults[dim.parent.max_name] = \
-            frozenset(range(factor*(size - 1), factor*(size)))
+            frozenset(range(1, factor*(size)))
 
         return defaults
 
