@@ -418,6 +418,19 @@ class TestLifting(object):
                 for j in trees] == expected
         assert "".join(mapper.get(i.dim.name, i.dim.name) for i in iters) == visit
 
+    def test_implicit_only(self):
+        grid = Grid(shape=(5, 5))
+        time = grid.time_dim
+        u = TimeFunction(name="u", grid=grid, time_order=1)
+        idimeq = Eq(Symbol('s'), 1, implicit_dims=time)
+
+        op = Operator([Eq(u.forward, u + 1.), idimeq])
+        trees = retrieve_iteration_tree(op)
+
+        assert len(trees) == 2
+        assert_structure(op, ['t,x,y', 't'], 'txy')
+        assert trees[1].dimensions == [time]
+
 
 class TestAliases(object):
 
@@ -2603,6 +2616,16 @@ class TestAliases(object):
 
         assert len([i for i in FindSymbols().visit(op) if i.is_Array]) == 1
         assert op._profiler._sections['section0'].sops == 16
+
+    def test_issue_2163(self):
+        grid = Grid((3, 3))
+        z = grid.dimensions[-1]
+        mapper = {z: INT(abs(z-1))}
+
+        u = TimeFunction(name="u", grid=grid)
+        op = Operator(Eq(u.forward, u.dy.dy.subs(mapper),
+                         subdomain=grid.interior))
+        assert_structure(op, ['t,i0x,i0y'], 'ti0xi0y')
 
 
 class TestIsoAcoustic(object):
